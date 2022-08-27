@@ -1,0 +1,5 @@
+*.cpp
+*.hpp
+*.exe
+*.txt
+__pycache__
