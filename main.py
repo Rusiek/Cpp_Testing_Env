@@ -110,7 +110,7 @@ def check_stdout(files_in, files_out, max_time):
     test_num = len(files_in)
     make_log("Collecting Tests:                 SUCCESS")
     make_log(f"Number of Tests:                  {test_num}")
-    make_log("Testing Phase:                    STARTED")
+    make_log("Testing Phase:                    STARTED\n")
     for i in range(test_num):
         make_log(f"Run Test:                         {files_in[i][:-3]}")
         file_in = open(files_in[i], 'r')
@@ -126,7 +126,7 @@ def check_stdout(files_in, files_out, max_time):
             buffor.close()
         elif prog.returncode:
             output.SYSFAULT += 1
-            make_log("Test Result:                      TIMEOUT\n")
+            make_log("Test Result:                      SYSFAULT\n")
             buffor.close()
         else:
             buffor.close()
@@ -156,7 +156,6 @@ def print_raport(raport):
     if raport.OK + raport.ERROR:
         avg_time = raport.TIME / (raport.OK + raport.ERROR)
         make_log(f"AVG TIME:                         {round(avg_time, 3)}s")
-    
 
 if __name__ == "__main__":
     try:
@@ -168,11 +167,10 @@ if __name__ == "__main__":
         check_in_out(files_in, files_out)
         raport = check_stdout(files_in, files_out, max_time)
         print_raport(raport)
+        summary()
     except ArgError:
         make_log(ArgError.print_msg())
     except CmpError:
         make_log(CmpError.print_msg())
     except CmpTimeout:
         make_log(CmpTimeout.print_msg())
-
-    summary()
