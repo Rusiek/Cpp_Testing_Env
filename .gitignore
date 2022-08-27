@@ -2,4 +2,6 @@
 *.hpp
 *.exe
 *.txt
+*/
+.vscode
 __pycache__
