@@ -9,6 +9,7 @@ from check import compare
 
 SLEEP_TIME = 1
 LOG_PATH = "log.txt"
+CMP_COMMAND = "g++ -std=c++17 -O3 main.cpp -lm"
 
 class Raport():
     OK = 0
@@ -16,6 +17,10 @@ class Raport():
     TIMEOUT = 0
     SYSFAULT = 0
     TIME = 0
+
+    ERROR_LIST = []
+    TIMEOUT_LIST = []
+    SYSFAULT_LIST = []
 
 def summary():
     file = open(LOG_PATH, "r")
@@ -43,15 +48,14 @@ def read_argv(argv):
     except:
         raise ArgError
 
-cmp_command = "g++ -std=c++17 -O3 main.cpp -lm"
 def compile_cpp(max_time=60):
     cpp_path = os.getcwd() + "\\main.cpp" 
     make_log(f"Compiled File:                    {cpp_path}")
-    make_log(f"Compilation Command:              {cmp_command}")
+    make_log(f"Compilation Command:              {CMP_COMMAND}")
     make_log(f"Max Compilation Time:             {max_time}s")
     
     s_time = time()
-    compile_process = subprocess.Popen(cmp_command.rsplit(" "))
+    compile_process = subprocess.Popen(CMP_COMMAND.rsplit(" "))
     while time() - s_time < max_time and compile_process.poll() is None: pass
     if compile_process.poll() is None:
         compile_process.kill()
@@ -101,22 +105,27 @@ def check_in_out(in_files, out_files):
     in_files = in_files[:i]
     out_files = out_files[:j]
     
-def check_stdout(files_in, files_out, cnt, max_time):
+def check_stdout(files_in, files_out, max_time):
     output = Raport()
     test_num = len(files_in)
     make_log("Collecting Tests:                 SUCCESS")
-    make_log(f"Number of Tests:                  {test_num}\n")
+    make_log(f"Number of Tests:                  {test_num}")
+    make_log("Testing Phase:                    STARTED")
     for i in range(test_num):
         make_log(f"Run Test:                         {files_in[i][:-3]}")
         file_in = open(files_in[i], 'r')
         file_out = open(files_out[i], 'r')
         buffor = open(f"{files_out[i][:-4]}_output.out", "w+")
-        s_time = time()
         prog = subprocess.Popen(["./a"], stdin=file_in, stdout=buffor)
+        s_time = time()
         while time() - s_time < max_time and prog.poll() is None: pass
         if prog.poll() is None:
             prog.kill()
             output.TIMEOUT += 1
+            make_log("Test Result:                      TIMEOUT\n")
+            buffor.close()
+        elif prog.returncode:
+            output.SYSFAULT += 1
             make_log("Test Result:                      TIMEOUT\n")
             buffor.close()
         else:
@@ -138,6 +147,7 @@ def check_stdout(files_in, files_out, cnt, max_time):
     return output
 
 def print_raport(raport):
+    make_log("Testing Phase:                    FINISHED")
     all_tests = raport.OK + raport.ERROR + raport.TIMEOUT + raport.SYSFAULT
     make_log(f"INI_OK:                           {raport.OK}/{all_tests}")
     make_log(f"INI_ERROR:                        {raport.ERROR}/{all_tests}")
@@ -146,6 +156,7 @@ def print_raport(raport):
     if raport.OK + raport.ERROR:
         avg_time = raport.TIME / (raport.OK + raport.ERROR)
         make_log(f"AVG TIME:                         {round(avg_time, 3)}s")
+    
 
 if __name__ == "__main__":
     try:
@@ -155,9 +166,7 @@ if __name__ == "__main__":
         files_in = get_in_files(dirpath)
         files_out = get_out_files(dirpath)
         check_in_out(files_in, files_out)
-        cnt = Raport()
-        raport = check_stdout(files_in, files_out, cnt, max_time)
-        make_log("Testing Phase:                    FINISHED")
+        raport = check_stdout(files_in, files_out, max_time)
         print_raport(raport)
     except ArgError:
         make_log(ArgError.print_msg())
